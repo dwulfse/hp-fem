@@ -1,4 +1,7 @@
 .vscode/
+build/
+main/FEM
+FEM.out
 errors.csv
 residuals.csv
 Eigen/

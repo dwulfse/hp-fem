@@ -2,8 +2,8 @@
 #define SOLVERHEADERDEF
 
 #include "CSR_Matrix.hpp"
-#include "../thirdparty/Eigen/Sparse"
-#include "../thirdparty/Eigen/SparseCholesky"
+#include <Eigen/Sparse>
+#include <Eigen/SparseCholesky>
 #include <vector>
 
 class Solver

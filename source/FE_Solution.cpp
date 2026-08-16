@@ -5,7 +5,7 @@
 #include "GaussQuadrature2D.hpp"
 #include "Element1D.hpp"
 #include "Element2D.hpp"
-#include "helper.hpp"
+#include "Helper.hpp"
 #include "Solver.hpp"
 
 #include <iostream>
