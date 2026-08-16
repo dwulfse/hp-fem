@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A from-scratch hp-finite element solver in C++ (~2,500 lines), written for an undergraduate maths dissertation (Nottingham G14DIS). Solves `-Δu = f` in 1D and on 2D triangles with a hierarchical modal basis, plus a semilinear problem `-Δu + λu^(2q+1) = f` via damped Picard iteration. Dirichlet BCs only.
 
-`dissertation_final_report.pdf` (untracked, repo root) is the authoritative spec. §5 walks through every class and the maths it implements; §5.2.2 defines the basis functions exactly. Read the relevant section before changing numerics rather than re-deriving them.
+`dissertation_final_report.pdf` (repo root) is the authoritative spec. §5 walks through every class and the maths it implements; §5.2.2 defines the basis functions exactly. Read the relevant section before changing numerics rather than re-deriving them.
 
 This repo is being reworked into a portfolio piece for a GitHub profile linked on a CV. Presentation quality — a working cross-platform build, a README, a clean tree — matters alongside correctness.
 
