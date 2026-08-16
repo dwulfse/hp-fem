@@ -18,6 +18,7 @@ class Element2D : public Element
 		virtual ~Element2D();
 
 		// methods
+		double basisSign(int i);
 		virtual std::vector<std::vector<double>> getLocalStiffness() override;
 		std::vector<double> getLocalStiffnessProduct(const std::vector<double>& U);
 		virtual std::vector<double> getLocalLoad(double (*f)(const std::vector<double>&)) override;

@@ -65,7 +65,7 @@ std::vector<double> Element1D::getLocalLoad(double (*f)(const std::vector<double
 	double J = h / 2.0;
 
 	double gauss;
-	for (int k=0; k<quad.points.size(); k++)
+	for (int k=0; k<static_cast<int>(quad.points.size()); k++)
 	{
 		gauss = quad.points[k];
 		double x = 0.5 * h * gauss + 0.5 * (nodes.back() + nodes.front());

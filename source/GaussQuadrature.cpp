@@ -42,7 +42,8 @@ void GaussQuadrature::assembleQuadrature(int n)
 			weights = {(18.0 - sqrt(30))/36, (18.0 + sqrt(30))/36, (18.0 + sqrt(30))/36, (18.0 - sqrt(30))/36};
 			return;
 		case 5:
-			points = {-sqrt(5.0/9 + (2.0/9)*sqrt(15.0/7)), -sqrt(5.0/9 - (2.0/9)*sqrt(15.0/7)), 0.0, sqrt(5.0/9 - (2.0/9)*sqrt(15.0/7)), sqrt(5.0/9 + (2.0/9)*sqrt(15.0/7))};
+			// nodes are (1/3) sqrt(5 -+ 2 sqrt(10/7)), i.e. sqrt(5/9 -+ (2/9) sqrt(10/7))
+			points = {-sqrt(5.0/9 + (2.0/9)*sqrt(10.0/7)), -sqrt(5.0/9 - (2.0/9)*sqrt(10.0/7)), 0.0, sqrt(5.0/9 - (2.0/9)*sqrt(10.0/7)), sqrt(5.0/9 + (2.0/9)*sqrt(10.0/7))};
 			weights = {(322.0 - 13*sqrt(70))/900, (322.0 + 13*sqrt(70))/900, 128.0/225, (322.0 + 13*sqrt(70))/900, (322.0 - 13*sqrt(70))/900};
 			return;
 	}
@@ -76,7 +77,9 @@ void GaussQuadrature::assembleQuadrature(int n)
 				// throw error if Newton's method did not converge
 				throw std::runtime_error("Newton's method did not converge");
 			}
-		} while (abs(x - x_old) > tol);
+		// fabs, not abs: the integer abs would truncate every step below 1.0 to zero
+		// and stop the iteration after a single step
+		} while (fabs(x - x_old) > tol);
 
 		// store points and weights using symmetry of roots
 		double w = 2.0 / ((1.0 - x * x) * pow(legendre_deriv(n, x), 2));

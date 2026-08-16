@@ -11,10 +11,10 @@ void FE_Mesh::allocateStiffness()
 	int no_nodes = getNoNodes();
 	std::vector<int> nnz_per_row(no_nodes, 0);
 
-	for (int k=0; k<elements.size(); k++) // for each element
+	for (int k=0; k<static_cast<int>(elements.size()); k++) // for each element
 	{
 		const std::vector<int>& DoF = elements[k]->local_DoF;
-		for (int j=0; j<DoF.size(); j++) // for each connection
+		for (int j=0; j<static_cast<int>(DoF.size()); j++) // for each connection
 		{
 			// add no. of connections to nnz in this row
 			nnz_per_row[DoF[j]] += DoF.size();
@@ -34,12 +34,12 @@ void FE_Mesh::allocateStiffness()
 
 	std::vector<int> row_start_copy = stiffness.row_start;
 
-	for (int k=0; k<elements.size(); k++)
+	for (int k=0; k<static_cast<int>(elements.size()); k++)
 	{
 		std::vector<int>& DoF = elements[k]->local_DoF;
-		for (int i=0; i<DoF.size(); i++)
+		for (int i=0; i<static_cast<int>(DoF.size()); i++)
 		{
-			for (int j=0; j<DoF.size(); j++)
+			for (int j=0; j<static_cast<int>(DoF.size()); j++)
 			{
 				int row = DoF[i];
 				int pos = row_start_copy[row];

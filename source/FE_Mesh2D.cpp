@@ -6,6 +6,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <sstream>
+#include <cmath>
 
 // make pairs of ordered edges based on two vertices
 std::pair<int, int> makeEdgePair(int i, int j)
@@ -41,6 +42,35 @@ int FE_Mesh2D::getNoNodes()
 	return nodes.size() +
 		(p - 1) * edge_dofs.size() +
 		(p - 1) * (p - 2) / 2 * n;
+}
+
+// mesh size h := largest element diameter, i.e. the longest edge in the triangulation
+// meshes are not necessarily uniform, so this must be measured rather than assumed
+double FE_Mesh2D::getMeshSize()
+{
+	double h = 0.0;
+
+	for (int k=0; k<static_cast<int>(elements.size()); k++)
+	{
+		Element2D* elem = dynamic_cast<Element2D*>(elements[k].get());
+		const std::vector<Point2D>& elem_nodes = elem->nodes;
+
+		for (int i=0; i<3; i++)
+		{
+			const Point2D& a = elem_nodes[i];
+			const Point2D& b = elem_nodes[(i + 1) % 3];
+			double dx = a.x - b.x;
+			double dy = a.y - b.y;
+			double edge = pow(dx*dx + dy*dy, 0.5);
+
+			if (edge > h)
+			{
+				h = edge;
+			}
+		}
+	}
+
+	return h;
 }
 
 // load mesh from Triangle generated files
@@ -224,7 +254,7 @@ void FE_Mesh2D::constructMesh(std::string filename)
 // evaluate solution at x
 double FE_Mesh2D::evaluateSolution(std::vector<double> x, std::vector<double> solution)
 {
-	for (int i=0; i<elements.size(); i++)
+	for (int i=0; i<static_cast<int>(elements.size()); i++)
 	{
 		Element2D* elem = dynamic_cast<Element2D*>(elements[i].get());
 		PolynomialSpace poly = elem->poly;
@@ -256,9 +286,9 @@ double FE_Mesh2D::evaluateSolution(std::vector<double> x, std::vector<double> so
 			const std::vector<int>& elem_dof = elem->local_DoF;
 
 			double u_val = 0.0;
-			for (int j=0; j<elem_dof.size(); j++)
+			for (int j=0; j<static_cast<int>(elem_dof.size()); j++)
 			{
-				double phi = poly.basis_2D(j, xi1, xi2);
+				double phi = elem->basisSign(j) * poly.basis_2D(j, xi1, xi2);
 				u_val += solution[elem_dof[j]] * phi;
 			}
 			return u_val;
@@ -270,7 +300,7 @@ double FE_Mesh2D::evaluateSolution(std::vector<double> x, std::vector<double> so
 // evaluate derivative at x
 void FE_Mesh2D::evaluateDerivative(std::vector<double> x, std::vector<double> solution, double grad[2])
 {
-	for (int i=0; i<elements.size(); i++)
+	for (int i=0; i<static_cast<int>(elements.size()); i++)
 	{
 		Element2D* elem = dynamic_cast<Element2D*>(elements[i].get());
 		PolynomialSpace poly = elem->poly;
@@ -301,13 +331,14 @@ void FE_Mesh2D::evaluateDerivative(std::vector<double> x, std::vector<double> so
 		{
 			const std::vector<int>& elem_dof = elem->local_DoF;
 
-			for (int i=0; i<elem_dof.size(); i++)
+			for (int i=0; i<static_cast<int>(elem_dof.size()); i++)
 			{
 				double phi_grad[2];
 
 				poly.basis_2D_grad(i, xi1, xi2, phi_grad);
-				grad[0] += solution[elem_dof[i]] * phi_grad[0];
-				grad[1] += solution[elem_dof[i]] * phi_grad[1];
+				double sign = elem->basisSign(i);
+				grad[0] += solution[elem_dof[i]] * sign * phi_grad[0];
+				grad[1] += solution[elem_dof[i]] * sign * phi_grad[1];
 			}
 		}
 	}
@@ -322,7 +353,7 @@ void FE_Mesh2D::sendSolutionToFile(int noGridPoints, const std::vector<double>& 
 	GaussQuadrature2D quad;
 	quad.assembleQuadrature(noGridPoints);
 
-	for (int i=0; i<elements.size(); i++)
+	for (int i=0; i<static_cast<int>(elements.size()); i++)
 	{
 		Element2D* elem = dynamic_cast<Element2D*>(elements[i].get());
 		const std::vector<Point2D>& nodes = elem->nodes;
@@ -331,9 +362,9 @@ void FE_Mesh2D::sendSolutionToFile(int noGridPoints, const std::vector<double>& 
 			Point2D point = mapToPhysical(nodes[0], nodes[1], nodes[2], quad.points[j]);
 
 			double u_val = 0.0;
-			for (int k=0; k<elem->local_DoF.size(); k++)
+			for (int k=0; k<static_cast<int>(elem->local_DoF.size()); k++)
 			{
-				double phi = elem->poly.basis_2D(k, quad.points[j].x, quad.points[j].y);
+				double phi = elem->basisSign(k) * elem->poly.basis_2D(k, quad.points[j].x, quad.points[j].y);
 				u_val += solution[elem->local_DoF[k]] * phi;
 			}
 
@@ -349,7 +380,7 @@ void FE_Mesh2D::applyBoundaryConditions(double u_val, double /*unused*/, bool ap
 {
 	if (!apply_boundary) return;
 
-	for (int k=0; k<is_boundary.size(); k++)
+	for (int k=0; k<static_cast<int>(is_boundary.size()); k++)
 	{
 		if (is_boundary[k])
 		{
@@ -360,7 +391,8 @@ void FE_Mesh2D::applyBoundaryConditions(double u_val, double /*unused*/, bool ap
 			}
 
 			// zero out column
-			for (int i=0; i<stiffness.row_start.size(); i++)
+			// row_start holds noRows + 1 entries, so stop one short: row_start[i+1] is read below
+			for (int i=0; i<static_cast<int>(stiffness.row_start.size()) - 1; i++)
 			{
 				for (int j=stiffness.row_start[i]; j<stiffness.row_start[i+1]; j++)
 				{
@@ -385,13 +417,13 @@ std::vector<double> FE_Mesh2D::assembleNonlinearLoad(const std::vector<double>& 
 	int totalDoFs = getNoNodes();
 	std::vector<double> loadNL(totalDoFs, 0.0);
 
-	for (int i=0; i<elements.size(); i++)
+	for (int i=0; i<static_cast<int>(elements.size()); i++)
 	{
 		Element2D* elem = dynamic_cast<Element2D*>(elements[i].get());
 		std::vector<double> local_loadNL = elem->getLocalNonlinearLoad(U, q);
 		const std::vector<int>& elem_dof = elem->local_DoF;
 
-		for (int j=0; j<elem_dof.size(); j++)
+		for (int j=0; j<static_cast<int>(elem_dof.size()); j++)
 		{
 			loadNL.at(elem_dof.at(j)) += local_loadNL.at(j);
 		}
@@ -415,13 +447,13 @@ std::vector<double> FE_Mesh2D::assembleStiffnessProduct(const std::vector<double
 	int totalDoFs = getNoNodes();
 	std::vector<double> stiffnessProduct(totalDoFs, 0.0);
 
-	for (int i=0; i<elements.size(); i++)
+	for (int i=0; i<static_cast<int>(elements.size()); i++)
 	{
 		Element2D* elem = dynamic_cast<Element2D*>(elements[i].get());
 		std::vector<double> local_stiffness = elem->getLocalStiffnessProduct(U);
 		const std::vector<int>& elem_dof = elem->local_DoF;
 
-		for (int j=0; j<elem_dof.size(); j++)
+		for (int j=0; j<static_cast<int>(elem_dof.size()); j++)
 		{
 			stiffnessProduct.at(elem_dof.at(j)) += local_stiffness.at(j);
 		}

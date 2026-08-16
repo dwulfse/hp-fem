@@ -25,7 +25,8 @@ CSRMatrix::~CSRMatrix()
 // override () operator for read-only indexing
 double& CSRMatrix::operator()(int i, int j)
 {
-	if (i >= row_start.size() - 1 || i < 0 || j >= row_start.size() - 1 || j < 0)
+	int noRows = static_cast<int>(row_start.size()) - 1;
+	if (i >= noRows || i < 0 || j >= noRows || j < 0)
 	{
 		throw std::out_of_range("Index out of range");
 	}

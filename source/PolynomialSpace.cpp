@@ -32,7 +32,8 @@ double PolynomialSpace::evaluate(int i, double x)
 	return 0.0;
 }
 
-double PolynomialSpace::evaluate_deriv(int i, double x)
+// x is unused: the vertex shape functions are linear, so their derivatives are constant
+double PolynomialSpace::evaluate_deriv(int i, double /*x*/)
 {
 	if (i == 0)
 	{
@@ -73,7 +74,8 @@ void PolynomialSpace::evaluate_affine(double xi1, double xi2, double lambda[3])
 	lambda[2] = (xi1 + 1.0) / 2.0;
 }
 
-void PolynomialSpace::evaluate_affine_grad(double xi1, double xi2, double grad[3][2])
+// xi1, xi2 are unused: the affine coordinates are linear, so their gradients are constant
+void PolynomialSpace::evaluate_affine_grad(double /*xi1*/, double /*xi2*/, double grad[3][2])
 {
 	grad[0][0] = 0.0;
 	grad[0][1] = 0.5;
@@ -145,7 +147,8 @@ double PolynomialSpace::basis_2D(int i, double x1, double x2)
 	if (i < noVertices + noEdgeFuncs)
 	{
 		int edge_i = (i - noVertices) / modesPEdge;
-		int k = ((i - noVertices) % modesPEdge);
+		// edge modes run k = 2, ..., p; evaluate_edge takes k and uses kernel k-2
+		int k = ((i - noVertices) % modesPEdge) + 2;
 
 		switch(edge_i)
 		{
@@ -226,7 +229,8 @@ void PolynomialSpace::basis_2D_grad(int i, double x1, double x2, double grad[2])
 	if (i < noVertices + noEdgeFuncs)
 	{
 		int edge_i = (i - noVertices) / modesPEdge;
-		int k = ((i - noVertices) % modesPEdge);
+		// edge modes run k = 2, ..., p; the kernel below is indexed k-2
+		int k = ((i - noVertices) % modesPEdge) + 2;
 
 		double product, diff;
 		double dProd[2], dDiff[2];

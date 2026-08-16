@@ -14,8 +14,8 @@ class Element
 
 		// constructors
 		Element() {};
-		Element(int p, std::vector<int>& local_DoF) : p(p), poly(p), local_DoF(local_DoF) {};
-		Element(int id, int p, std::vector<int>& local_DoF) : id(id), p(p), poly(p), local_DoF(local_DoF) {};
+		Element(int p, std::vector<int>& local_DoF) : p(p), local_DoF(local_DoF), poly(p) {};
+		Element(int id, int p, std::vector<int>& local_DoF) : id(id), p(p), local_DoF(local_DoF), poly(p) {};
 
 		// destructor
 		virtual ~Element() {};
