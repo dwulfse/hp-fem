@@ -19,6 +19,37 @@ Element2D::~Element2D()
 {
 }
 
+// edge modes are parameterised from the first local vertex of the edge to the second,
+// so neighbouring triangles must agree on that direction or their shared edge functions
+// will not match. the canonical direction is from the lower global vertex index to the
+// higher; when the local ordering disagrees the edge is traversed backwards, and modes
+// with an odd kernel index are antisymmetric under that reversal, so they change sign.
+// even modes are symmetric and are left alone.
+double Element2D::basisSign(int i)
+{
+	int modesPEdge = p - 1;
+
+	// vertex and bubble functions are unaffected: bubbles vanish on every edge
+	if (p < 2 || i < 3 || i >= 3 + 3 * modesPEdge)
+	{
+		return 1.0;
+	}
+
+	int edge_i = (i - 3) / modesPEdge;
+	int mode = (i - 3) % modesPEdge;
+
+	if (mode % 2 == 0)
+	{
+		return 1.0;
+	}
+
+	// local edge edge_i joins local vertices edge_i and edge_i + 1
+	int v1 = local_DoF[edge_i];
+	int v2 = local_DoF[(edge_i + 1) % 3];
+
+	return (v1 > v2) ? -1.0 : 1.0;
+}
+
 std::vector<std::vector<double>> Element2D::getLocalStiffness()
 {
 	// find degrees of freedom and allocate local stiffness matrix
@@ -46,8 +77,9 @@ std::vector<std::vector<double>> Element2D::getLocalStiffness()
 			double gradRef_i[2] = {0.0, 0.0};
 			// evaluate ith basis function at quadrature point
 			poly.basis_2D_grad(i, quad.points[k].x, quad.points[k].y, gradRef_i);
-			gradRef[i][0] = gradRef_i[0];
-			gradRef[i][1] = gradRef_i[1];
+			double sign = basisSign(i);
+			gradRef[i][0] = sign * gradRef_i[0];
+			gradRef[i][1] = sign * gradRef_i[1];
 		}
 		
 		// transform reference gradients to physical gradients
@@ -99,8 +131,9 @@ std::vector<double> Element2D::getLocalStiffnessProduct(const std::vector<double
 		{
 			double gradRef_i[2] = {0.0, 0.0};
 			poly.basis_2D_grad(i, quad.points[k].x, quad.points[k].y, gradRef_i);
-			gradRef.at(i)[0] = gradRef_i[0];
-			gradRef.at(i)[1] = gradRef_i[1];
+			double sign = basisSign(i);
+			gradRef.at(i)[0] = sign * gradRef_i[0];
+			gradRef.at(i)[1] = sign * gradRef_i[1];
 		}
 
 		std::vector<std::vector<double>> gradPhys(nDoF, std::vector<double>(2, 0.0));
@@ -151,7 +184,7 @@ std::vector<double> Element2D::getLocalLoad(double (*f)(const std::vector<double
 
 		for (int i=0; i<nDoF; i++)
 		{
-			double phi = poly.basis_2D(i, quad.points[k].x, quad.points[k].y);
+			double phi = basisSign(i) * poly.basis_2D(i, quad.points[k].x, quad.points[k].y);
 			load[i] += (detA / 4.0) * quad.weights[k] * fx * phi;
 		}
 	}
@@ -183,7 +216,7 @@ std::vector<double> Element2D::getLocalNonlinearLoad(const std::vector<double>& 
 		double u_val = 0.0;
 		for (int j=0; j<nDoF; j++)
 		{
-			double phi = poly.basis_2D(j, xi1, xi2);
+			double phi = basisSign(j) * poly.basis_2D(j, xi1, xi2);
 			u_val += U.at(local_DoF[j]) * phi;
 		}
 
@@ -193,7 +226,7 @@ std::vector<double> Element2D::getLocalNonlinearLoad(const std::vector<double>& 
 		// assemble contributions for each local basis function
 		for (int i=0; i<nDoF; i++)
 		{
-			double phi = poly.basis_2D(i, xi1, xi2);
+			double phi = basisSign(i) * poly.basis_2D(i, xi1, xi2);
 			loadNL[i] += (detA / 4.0) * quad.weights[k] * u_pow * phi;
 		}
 	}

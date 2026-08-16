@@ -147,7 +147,8 @@ double PolynomialSpace::basis_2D(int i, double x1, double x2)
 	if (i < noVertices + noEdgeFuncs)
 	{
 		int edge_i = (i - noVertices) / modesPEdge;
-		int k = ((i - noVertices) % modesPEdge);
+		// edge modes run k = 2, ..., p; evaluate_edge takes k and uses kernel k-2
+		int k = ((i - noVertices) % modesPEdge) + 2;
 
 		switch(edge_i)
 		{
@@ -228,7 +229,8 @@ void PolynomialSpace::basis_2D_grad(int i, double x1, double x2, double grad[2])
 	if (i < noVertices + noEdgeFuncs)
 	{
 		int edge_i = (i - noVertices) / modesPEdge;
-		int k = ((i - noVertices) % modesPEdge);
+		// edge modes run k = 2, ..., p; the kernel below is indexed k-2
+		int k = ((i - noVertices) % modesPEdge) + 2;
 
 		double product, diff;
 		double dProd[2], dDiff[2];

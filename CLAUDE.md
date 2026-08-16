@@ -43,15 +43,13 @@ Measured with `h` taken from `getMeshSize()` (see below), fitted slope of `log(e
 
 | `p` | expected | 1D | 2D |
 | --- | --- | --- | --- |
-| 1 | 2 | 2.00 | **1.97** |
-| 2 | 3 | 3.00 | 2.08 |
-| 3 | 4 | 4.00 | 1.72 |
+| 1 | 2 | 2.00 | 1.97 |
+| 2 | 3 | 3.00 | 2.95 |
+| 3 | 4 | 4.00 | 4.03 |
 
-1D is optimal at every degree. **In 2D only `p=1` is optimal; `p=2` and `p=3` both stall at ~2**, i.e. the edge and bubble modes contribute nothing asymptotically. That is the signature of a non-conforming higher-order basis, and it points hard at the missing shared-edge sign correction under Sharp edges.
+**Both dimensions now reach the theoretical rate for `p = 1, 2, 3`**, which is the range the sweep covers. The dissertation (§6) reported 2D as "converges but not at the theoretical rate" and left it unresolved; that shortfall is fixed. It had three independent causes, all since corrected: the fabricated `h` (see Configuration and inputs), an off-by-two in the edge-mode kernel index, and the missing shared-edge sign correction.
 
-Note `p=1` hitting 1.97 means the vertex basis, the affine map, quadrature, assembly, BCs and the solver are all sound — so the defect is specifically in the `p ≥ 2` modes, not anywhere in the surrounding machinery.
-
-The dissertation (§6) reports this as "converges but not at the theoretical rate". Its plot was additionally distorted by the `h` bug described under Configuration and inputs; the numbers above are post-fix and are the baseline to beat.
+**`p ≥ 4` is still broken** — fitted rates of roughly 0.3 (`p=4`) and 1.1 (`p=5`) against expected 5 and 6. This is a separate, pre-existing defect: it was equally broken before the above fixes (1.03 and 1.26 at the time). It is *not* a basis-structure problem — bubbles vanish on all three edges and edge functions vanish on the other two edges at every degree up to 5, all to machine precision. Raising the quadrature to `nq = p+4` cuts the `p=4` error by ~2400× but leaves the rate wrong and degrades `p=3`, and the finest-mesh errors for `p = 3, 4, 5` then cluster around 5e-06, which looks like an error floor rather than a quadrature-order problem. Unresolved; start from the floor, not from the basis.
 
 ## Architecture
 
@@ -63,12 +61,13 @@ Numerical conventions (dissertation §5.2) — easy to break silently:
 
 - Reference elements are `[-1, 1]` in 1D and the triangle `{-1 < ξ, η; ξ + η < 0}` in 2D. **Not** the unit triangle; affine coordinates and quadrature both assume this.
 - The basis is modal/hierarchical, not nodal: vertex functions, then `p-1` Lobatto edge modes per edge (`p ≥ 2`), then `(p-1)(p-2)/2` interior bubbles (`p ≥ 3`), indexed in that order.
+- Edge modes run `k = 2, ..., p`, and `evaluate_edge`/`kernel` are indexed `k-2`. The loop counter in `basis_2D`/`basis_2D_grad` is 0-based, so it must have 2 added before use. Getting this wrong is silent: `kernel(-2)` and `kernel(-1)` return `2/(1±x)`, which are not polynomials and blow up at the edge endpoints, but the guard in `evaluate_edge` zeroes them exactly at the vertices so the functions still look plausible. The invariant to test against: along edge 0 (`η = -1`), edge mode `m` must equal the 1D Lobatto function `l_{m+2}(ξ)`.
 - Quadrature uses `nq = p + 1` points, exact to degree `2·nq - 1`.
 - 2D load scales by `detA/4`, but 2D stiffness scales by `detA` — even though the comment directly above it (`source/Element2D.cpp:66`) states `detA/4`. Comment and code disagree, so the comment is what needs fixing: `p=1` converges at exactly the optimal rate, which it could not if the scaling were wrong.
 
 Sharp edges:
 
-- **Missing shared-edge sign correction — prime suspect for the 2D shortfall.** Dissertation §5.2.1/§5.2.2 prescribes a `-1` multiplier on edge basis functions when a shared edge's global vertex IDs are not in increasing order, without which odd-degree edge modes don't match across neighbouring triangles. `FE_Mesh2D::makeEdgePair` sorts the pair so both triangles get the same DoF *indices*, but no sign correction exists anywhere in the source — so the basis is likely non-conforming at odd `p`. Verify before relying on this.
+- **Shared-edge sign correction.** `Element2D::basisSign` implements the `-1` multiplier from dissertation §5.2.1/§5.2.2. Edge modes are parameterised from the first local vertex of the edge to the second, so neighbouring triangles must agree on that direction; the canonical direction is low global vertex index to high, and when the local ordering disagrees, modes with an **odd** kernel index flip sign (even modes are symmetric under the reversal and must not be touched). `FE_Mesh2D::makeEdgePair` already sorts the pair so both triangles share DoF indices — the sign is the other half of that. It must be applied at *every* basis evaluation, not just assembly: local stiffness and load, the semilinear stiffness-product and nonlinear load, and the three reconstruction sites in `FE_Mesh2D` (`evaluateSolution`, `evaluateDerivative`, `sendSolutionToFile`). Miss one and the solve and the reported error disagree.
 - `CSRMatrix::operator()(i,j)` throws `std::out_of_range` unless the slot was pre-allocated by `FE_Mesh::allocateStiffness()`. Any change to DoF connectivity must be reflected in the allocation pass first.
 - `CSRMatrix::row_start` holds `noRows + 1` entries. Any loop that reads `row_start[i+1]` must stop at `size() - 1`, not `size()`. Getting this wrong reads one past the end — it trips a libstdc++ assertion at `-O0` but silently corrupts the heap in the Release build, which is how it hid for so long.
 - `SimplicialLLT` is a Cholesky solver and assumes SPD. Boundary conditions are applied by zeroing rows/columns and setting a unit diagonal specifically to preserve this; non-Dirichlet BCs would break the solver choice.

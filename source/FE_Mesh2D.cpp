@@ -288,7 +288,7 @@ double FE_Mesh2D::evaluateSolution(std::vector<double> x, std::vector<double> so
 			double u_val = 0.0;
 			for (int j=0; j<static_cast<int>(elem_dof.size()); j++)
 			{
-				double phi = poly.basis_2D(j, xi1, xi2);
+				double phi = elem->basisSign(j) * poly.basis_2D(j, xi1, xi2);
 				u_val += solution[elem_dof[j]] * phi;
 			}
 			return u_val;
@@ -336,8 +336,9 @@ void FE_Mesh2D::evaluateDerivative(std::vector<double> x, std::vector<double> so
 				double phi_grad[2];
 
 				poly.basis_2D_grad(i, xi1, xi2, phi_grad);
-				grad[0] += solution[elem_dof[i]] * phi_grad[0];
-				grad[1] += solution[elem_dof[i]] * phi_grad[1];
+				double sign = elem->basisSign(i);
+				grad[0] += solution[elem_dof[i]] * sign * phi_grad[0];
+				grad[1] += solution[elem_dof[i]] * sign * phi_grad[1];
 			}
 		}
 	}
@@ -363,7 +364,7 @@ void FE_Mesh2D::sendSolutionToFile(int noGridPoints, const std::vector<double>& 
 			double u_val = 0.0;
 			for (int k=0; k<static_cast<int>(elem->local_DoF.size()); k++)
 			{
-				double phi = elem->poly.basis_2D(k, quad.points[j].x, quad.points[j].y);
+				double phi = elem->basisSign(k) * elem->poly.basis_2D(k, quad.points[j].x, quad.points[j].y);
 				u_val += solution[elem->local_DoF[k]] * phi;
 			}
 
