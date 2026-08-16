@@ -21,13 +21,13 @@ Requires system Eigen (`pacman -S eigen`; 5.0.1 is what this builds against). C+
 
 **The binary must be run from `main/`.** `FE_Mesh2D::constructMesh` opens mesh files by relative path, and `solution.csv` / `hp_error.csv` are written to the CWD — so CMake deliberately puts the executable in `main/`.
 
-`.vscode/tasks.json` still holds the original Windows MSYS2 build task. It is dead on Linux; CMake replaces it.
+`.vscode/` is untracked (gitignored) but still present on disk; its `tasks.json` holds the original Windows MSYS2 build task, which is dead on Linux. CMake replaces it.
 
 The build is warning-clean under `-Wall -Wextra`. Keep it that way. The stricter set the old `.vscode` config used still reports ~590, almost all `-Wsign-conversion` noise.
 
 ## Testing
 
-None. No test framework, no test files, no CI. Correctness is checked by hand: `main/main.cpp` prints a solution against a hardcoded expected vector in a comment, and L2-error convergence sweeps are written to `main/hp_error.csv`. No linter or formatter is configured; the warning flags in `.vscode/settings.json` belong to a VS Code extension, not to any build.
+None. No test framework, no test files, no CI. Correctness is checked by hand: `main/main.cpp` prints a solution against a hardcoded expected vector in a comment, and L2-error convergence sweeps are written to `main/hp_error.csv` (untracked — it and `solution.csv` are run-time output). No linter or formatter is configured.
 
 Benchmarks with known analytic solutions (dissertation §7) — use these to verify changes:
 
@@ -97,6 +97,8 @@ Commit messages are lowercase, free-form, descriptive sentences — no conventio
 
 ## Portfolio cleanup candidates
 
-Worth flagging when relevant: `FEM.out` is a committed 4.6 MB Windows PE32+ binary (stale, not runnable here, still in git history); there is no README; and `.vscode/` is tracked despite being gitignored.
+Mostly done: the repo is `dwulfse/hp-fem`, with a README, the convergence figure in `docs/`, a CMake build, and `FEM.out` / `.vscode/` / the generated CSVs all untracked.
+
+The one item left is that `FEM.out`, a 4.6 MB Windows binary, is still in git history and so still in the clone size. Removing it needs a history rewrite and a force push, which was considered and deliberately deferred.
 
 Extensions the dissertation itself proposes (§8), in its own order of preference: Neumann and mixed boundary conditions; hp-adaptivity driven by a posteriori error estimates; fully nonlinear problems.
