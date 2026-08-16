@@ -32,7 +32,8 @@ double PolynomialSpace::evaluate(int i, double x)
 	return 0.0;
 }
 
-double PolynomialSpace::evaluate_deriv(int i, double x)
+// x is unused: the vertex shape functions are linear, so their derivatives are constant
+double PolynomialSpace::evaluate_deriv(int i, double /*x*/)
 {
 	if (i == 0)
 	{
@@ -73,7 +74,8 @@ void PolynomialSpace::evaluate_affine(double xi1, double xi2, double lambda[3])
 	lambda[2] = (xi1 + 1.0) / 2.0;
 }
 
-void PolynomialSpace::evaluate_affine_grad(double xi1, double xi2, double grad[3][2])
+// xi1, xi2 are unused: the affine coordinates are linear, so their gradients are constant
+void PolynomialSpace::evaluate_affine_grad(double /*xi1*/, double /*xi2*/, double grad[3][2])
 {
 	grad[0][0] = 0.0;
 	grad[0][1] = 0.5;

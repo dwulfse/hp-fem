@@ -21,7 +21,7 @@ class FE_Mesh
 		// default constructor
 		FE_Mesh() {};
 		// constructor with n and p for 1D
-		FE_Mesh(int n, int p, int d) : n(n), p(p), d(d), stiffness(), load(p*n+1, 0.0), elements(n) {};
+		FE_Mesh(int n, int p, int d) : n(n), p(p), d(d), elements(n), stiffness(), load(p*n+1, 0.0) {};
 
 		// destructor
 		virtual ~FE_Mesh() {};

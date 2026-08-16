@@ -33,7 +33,8 @@ int FE_Mesh1D::getNoNodes()
 }
 
 // construct mesh of n elements and n+1 nodes
-void FE_Mesh1D::constructMesh(std::string filename)
+// filename is unused: the 1D mesh is generated from n and p, not read from file
+void FE_Mesh1D::constructMesh(std::string /*filename*/)
 {
 	const double h = 1.0 / n; // element size
 	int int_i = n + 1; // start of extra nodes indexing
@@ -129,7 +130,7 @@ void FE_Mesh1D::applyBoundaryConditions(double u0, double u1, bool boundary_u0, 
 			stiffness.entries[i] = 0.0;
 		}
 
-		for (int i=1; i<stiffness.col_no.size(); i++)
+		for (int i=1; i<static_cast<int>(stiffness.col_no.size()); i++)
 		{
 			if (stiffness.col_no[i] == 0)
 			{
@@ -148,7 +149,7 @@ void FE_Mesh1D::applyBoundaryConditions(double u0, double u1, bool boundary_u0, 
 			stiffness.entries[i] = 0.0;
 		}
 
-		for (int i=0; i<stiffness.col_no.size(); i++)
+		for (int i=0; i<static_cast<int>(stiffness.col_no.size()); i++)
 		{
 			if (stiffness.col_no[i] == n)
 			{

@@ -224,7 +224,7 @@ void FE_Mesh2D::constructMesh(std::string filename)
 // evaluate solution at x
 double FE_Mesh2D::evaluateSolution(std::vector<double> x, std::vector<double> solution)
 {
-	for (int i=0; i<elements.size(); i++)
+	for (int i=0; i<static_cast<int>(elements.size()); i++)
 	{
 		Element2D* elem = dynamic_cast<Element2D*>(elements[i].get());
 		PolynomialSpace poly = elem->poly;
@@ -256,7 +256,7 @@ double FE_Mesh2D::evaluateSolution(std::vector<double> x, std::vector<double> so
 			const std::vector<int>& elem_dof = elem->local_DoF;
 
 			double u_val = 0.0;
-			for (int j=0; j<elem_dof.size(); j++)
+			for (int j=0; j<static_cast<int>(elem_dof.size()); j++)
 			{
 				double phi = poly.basis_2D(j, xi1, xi2);
 				u_val += solution[elem_dof[j]] * phi;
@@ -270,7 +270,7 @@ double FE_Mesh2D::evaluateSolution(std::vector<double> x, std::vector<double> so
 // evaluate derivative at x
 void FE_Mesh2D::evaluateDerivative(std::vector<double> x, std::vector<double> solution, double grad[2])
 {
-	for (int i=0; i<elements.size(); i++)
+	for (int i=0; i<static_cast<int>(elements.size()); i++)
 	{
 		Element2D* elem = dynamic_cast<Element2D*>(elements[i].get());
 		PolynomialSpace poly = elem->poly;
@@ -301,7 +301,7 @@ void FE_Mesh2D::evaluateDerivative(std::vector<double> x, std::vector<double> so
 		{
 			const std::vector<int>& elem_dof = elem->local_DoF;
 
-			for (int i=0; i<elem_dof.size(); i++)
+			for (int i=0; i<static_cast<int>(elem_dof.size()); i++)
 			{
 				double phi_grad[2];
 
@@ -322,7 +322,7 @@ void FE_Mesh2D::sendSolutionToFile(int noGridPoints, const std::vector<double>& 
 	GaussQuadrature2D quad;
 	quad.assembleQuadrature(noGridPoints);
 
-	for (int i=0; i<elements.size(); i++)
+	for (int i=0; i<static_cast<int>(elements.size()); i++)
 	{
 		Element2D* elem = dynamic_cast<Element2D*>(elements[i].get());
 		const std::vector<Point2D>& nodes = elem->nodes;
@@ -331,7 +331,7 @@ void FE_Mesh2D::sendSolutionToFile(int noGridPoints, const std::vector<double>& 
 			Point2D point = mapToPhysical(nodes[0], nodes[1], nodes[2], quad.points[j]);
 
 			double u_val = 0.0;
-			for (int k=0; k<elem->local_DoF.size(); k++)
+			for (int k=0; k<static_cast<int>(elem->local_DoF.size()); k++)
 			{
 				double phi = elem->poly.basis_2D(k, quad.points[j].x, quad.points[j].y);
 				u_val += solution[elem->local_DoF[k]] * phi;
@@ -349,7 +349,7 @@ void FE_Mesh2D::applyBoundaryConditions(double u_val, double /*unused*/, bool ap
 {
 	if (!apply_boundary) return;
 
-	for (int k=0; k<is_boundary.size(); k++)
+	for (int k=0; k<static_cast<int>(is_boundary.size()); k++)
 	{
 		if (is_boundary[k])
 		{
@@ -360,7 +360,7 @@ void FE_Mesh2D::applyBoundaryConditions(double u_val, double /*unused*/, bool ap
 			}
 
 			// zero out column
-			for (int i=0; i<stiffness.row_start.size(); i++)
+			for (int i=0; i<static_cast<int>(stiffness.row_start.size()); i++)
 			{
 				for (int j=stiffness.row_start[i]; j<stiffness.row_start[i+1]; j++)
 				{
@@ -385,13 +385,13 @@ std::vector<double> FE_Mesh2D::assembleNonlinearLoad(const std::vector<double>& 
 	int totalDoFs = getNoNodes();
 	std::vector<double> loadNL(totalDoFs, 0.0);
 
-	for (int i=0; i<elements.size(); i++)
+	for (int i=0; i<static_cast<int>(elements.size()); i++)
 	{
 		Element2D* elem = dynamic_cast<Element2D*>(elements[i].get());
 		std::vector<double> local_loadNL = elem->getLocalNonlinearLoad(U, q);
 		const std::vector<int>& elem_dof = elem->local_DoF;
 
-		for (int j=0; j<elem_dof.size(); j++)
+		for (int j=0; j<static_cast<int>(elem_dof.size()); j++)
 		{
 			loadNL.at(elem_dof.at(j)) += local_loadNL.at(j);
 		}
@@ -415,13 +415,13 @@ std::vector<double> FE_Mesh2D::assembleStiffnessProduct(const std::vector<double
 	int totalDoFs = getNoNodes();
 	std::vector<double> stiffnessProduct(totalDoFs, 0.0);
 
-	for (int i=0; i<elements.size(); i++)
+	for (int i=0; i<static_cast<int>(elements.size()); i++)
 	{
 		Element2D* elem = dynamic_cast<Element2D*>(elements[i].get());
 		std::vector<double> local_stiffness = elem->getLocalStiffnessProduct(U);
 		const std::vector<int>& elem_dof = elem->local_DoF;
 
-		for (int j=0; j<elem_dof.size(); j++)
+		for (int j=0; j<static_cast<int>(elem_dof.size()); j++)
 		{
 			stiffnessProduct.at(elem_dof.at(j)) += local_stiffness.at(j);
 		}

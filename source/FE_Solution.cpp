@@ -12,7 +12,7 @@
 
 // constructor
 FE_Solution::FE_Solution(int n, int p, int d)
- : n(n), globalStiffness(), p(p), d(d)
+ : n(n), p(p), d(d), globalStiffness()
 {
 	// decide 1D or 2D mesh based on dimension
 	if (d == 1)
@@ -223,7 +223,7 @@ double FE_Solution::getL2Error(double (*f_analytic)(const std::vector<double>&))
 			computeAffineMatrix(nodes[0], nodes[1], nodes[2], A);
 			double detA = fabs(A[0][0] * A[1][1] - A[0][1] * A[1][0]);
 
-			for (int j=0; j<quad.points.size(); j++)
+			for (int j=0; j<static_cast<int>(quad.points.size()); j++)
 			{
 				Point2D point = mapToPhysical(nodes[0], nodes[1], nodes[2], quad.points[j]);
 				double u_exact = f_analytic({point.x, point.y});

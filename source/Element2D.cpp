@@ -38,7 +38,7 @@ std::vector<std::vector<double>> Element2D::getLocalStiffness()
 	invertAffineMatrix(A, A_inv);
 
 	// compute local stiffness matrix, integrated by quadrature
-	for (int k=0; k<quad.points.size(); k++)
+	for (int k=0; k<static_cast<int>(quad.points.size()); k++)
 	{
 		std::vector<std::vector<double>> gradRef(nDoF, std::vector<double>(2, 0.0));
 		for (int i=0; i<nDoF; i++)
@@ -92,7 +92,7 @@ std::vector<double> Element2D::getLocalStiffnessProduct(const std::vector<double
 	invertAffineMatrix(A, A_inv);
 
 	// compute local stiffness matrix, integrated by quadrature
-	for (int k=0; k<quad.points.size(); k++)
+	for (int k=0; k<static_cast<int>(quad.points.size()); k++)
 	{
 		std::vector<std::vector<double>> gradRef(nDoF, std::vector<double>(2, 0.0));
 		for (int i=0; i<nDoF; i++)
@@ -144,7 +144,7 @@ std::vector<double> Element2D::getLocalLoad(double (*f)(const std::vector<double
 	double detA = fabs(A[0][0] * A[1][1] - A[0][1] * A[1][0]);
 
 	// compute local load vector, integrated by quadrature
-	for (int k=0; k<quad.points.size(); k++)
+	for (int k=0; k<static_cast<int>(quad.points.size()); k++)
 	{
 		Point2D point = mapToPhysical(nodes[0], nodes[1], nodes[2], quad.points[k]);
 		double fx = f({point.x, point.y});
@@ -174,7 +174,7 @@ std::vector<double> Element2D::getLocalNonlinearLoad(const std::vector<double>& 
 	computeAffineMatrix(nodes[0], nodes[1], nodes[2], A);
 	double detA = fabs(A[0][0] * A[1][1] - A[0][1] * A[1][0]);
 
-	for (int k=0; k<quad.points.size(); k++)
+	for (int k=0; k<static_cast<int>(quad.points.size()); k++)
 	{
 		double xi1 = quad.points[k].x;
 		double xi2 = quad.points[k].y;

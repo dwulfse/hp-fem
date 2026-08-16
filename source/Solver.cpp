@@ -48,7 +48,7 @@ std::vector<double> Solver::solveEigen()
 
 	Eigen::VectorXd solution = solver.solve(Eigenb);
 
-	for (int i=0; i<b.size(); i++)
+	for (int i=0; i<static_cast<int>(b.size()); i++)
 	{
 		u[i] = solution(i);
 	}

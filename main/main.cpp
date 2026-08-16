@@ -33,12 +33,12 @@ int main()
 		auto u_analytic = [](const std::vector<double>& x) { return sin(M_PI * x[0]); }; // analytic solution
 		// create and solve problem
 		FE_Solution FEM(n, polynomialDegree, dimension);
-		solution = FEM.solve(f);
+		solution = FEM.solve(f, "", u0, u1, boundary_u0, boundary_u1);
 		FEM.sendSolutionToFile(64, u_analytic);
 
 		// output u vector
 		std::cout << "u vector: " << std::endl;
-		for (int i=0; i<solution.size(); i++)
+		for (int i=0; i<static_cast<int>(solution.size()); i++)
 		{
 			std::cout << "u" << i << " = " << solution[i] << std::endl;
 		}
@@ -61,7 +61,7 @@ int main()
 			for (int n=10; n<=20; n++)
 			{
 				FE_Solution FEM(n, p, dimension);
-				std::vector<double> solution = FEM.solve(f);
+				std::vector<double> solution = FEM.solve(f, "", u0, u1, boundary_u0, boundary_u1);
 				double error = FEM.getL2Error(u_analytic);
 				double h = 1.0 / n;
 				file << p << "," << h << "," << error << "\n";
@@ -82,12 +82,12 @@ int main()
 			std::string filenameNoExt = "6";
 			// create and solve problem
 			FE_Solution FEM(1, polynomialDegree, dimension);
-			solution = FEM.solve(f, filenameNoExt);
+			solution = FEM.solve(f, filenameNoExt, u0, u1, boundary_u0, boundary_u1);
 			FEM.sendSolutionToFile(32, u_analytic);
 
 			// output u vector
 			std::cout << "u vector: " << std::endl;
-			for (int i=0; i<solution.size(); i++)
+			for (int i=0; i<static_cast<int>(solution.size()); i++)
 			{
 				std::cout << "u" << i << " = " << solution[i] << std::endl;
 			}
@@ -99,7 +99,7 @@ int main()
 
 			for (int p=1; p<=3; p++)
 			{
-				for (int i=0; i<mesh_files.size(); i++)
+				for (int i=0; i<static_cast<int>(mesh_files.size()); i++)
 				{
 					FE_Solution FEM(1, p, dimension);
 					FEM.solve(f, mesh_files[i]);
@@ -133,7 +133,7 @@ int main()
 
 			// output u vector
 			std::cout << "u vector: " << std::endl;
-			for (int i=0; i<solution.size(); i++)
+			for (int i=0; i<static_cast<int>(solution.size()); i++)
 			{
 				std::cout << "u" << i << " = " << solution[i] << std::endl;
 			}
