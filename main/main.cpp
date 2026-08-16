@@ -63,7 +63,7 @@ int main()
 				FE_Solution FEM(n, p, dimension);
 				std::vector<double> solution = FEM.solve(f, "", u0, u1, boundary_u0, boundary_u1);
 				double error = FEM.getL2Error(u_analytic);
-				double h = 1.0 / n;
+				double h = FEM.getMeshSize();
 				file << p << "," << h << "," << error << "\n";
 			}
 		}
@@ -93,7 +93,9 @@ int main()
 			}
 
 			// convergence analysis
-			std::vector<std::string> mesh_files = {"4", "5", "6", "7", "8", "9"};
+			// domain.9 is excluded: it holds 15565 elements against domain.8's 512,
+			// so it is not a uniform refinement of the same family and would skew the study
+			std::vector<std::string> mesh_files = {"4", "5", "6", "7", "8"};
 			std::ofstream file("hp_error.csv");
 			file << "p,h,error\n";
 
@@ -104,7 +106,8 @@ int main()
 					FE_Solution FEM(1, p, dimension);
 					FEM.solve(f, mesh_files[i]);
 					double error = FEM.getL2Error(u_analytic);
-					double h = 1.0 / pow(2, stoi(mesh_files[i]) + 1);
+					// h is measured from the mesh, not inferred from the filename
+					double h = FEM.getMeshSize();
 					file << p << "," << h << "," << error << "\n";
 					std::cout << "p = " << p << ", h = " << h << ", error = " << error << std::endl;
 				}

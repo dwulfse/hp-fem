@@ -180,6 +180,12 @@ double FE_Solution::evaluateSolution(std::vector<double> x)
 	return mesh->evaluateSolution(x, solution);
 }
 
+double FE_Solution::getMeshSize()
+{
+	// use mesh specific measurement
+	return mesh->getMeshSize();
+}
+
 void FE_Solution::evaluateDerivative(std::vector<double> x, double grad[2])
 {
 	// use mesh specific evaluation method

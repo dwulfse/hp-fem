@@ -18,6 +18,7 @@ class FE_Mesh1D : public FE_Mesh
 		// methods
 		virtual std::vector<double> getNode(int i) override;
 		virtual int getNoNodes() override;
+		virtual double getMeshSize() override;
 		virtual void constructMesh(std::string filename = "") override;
 		virtual double evaluateSolution(std::vector<double> x, std::vector<double> solution) override;
 		virtual void evaluateDerivative(std::vector<double> x, std::vector<double> solution, double grad[2]) override;

@@ -37,6 +37,7 @@ class FE_Solution
 											double u0=0.0, double u1=0.0,
 											bool boundary_u0=true, bool boundary_u1=true);
 		double evaluateSolution(std::vector<double> x);
+		double getMeshSize();
 		void evaluateDerivative(std::vector<double> x, double grad[2]);
 		double getL2Error(double (*f_analytic)(const std::vector<double>&));
 		void sendSolutionToFile(int n, double (*f_analytic)(const std::vector<double>&));

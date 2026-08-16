@@ -6,6 +6,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <sstream>
+#include <cmath>
 
 // make pairs of ordered edges based on two vertices
 std::pair<int, int> makeEdgePair(int i, int j)
@@ -41,6 +42,35 @@ int FE_Mesh2D::getNoNodes()
 	return nodes.size() +
 		(p - 1) * edge_dofs.size() +
 		(p - 1) * (p - 2) / 2 * n;
+}
+
+// mesh size h := largest element diameter, i.e. the longest edge in the triangulation
+// meshes are not necessarily uniform, so this must be measured rather than assumed
+double FE_Mesh2D::getMeshSize()
+{
+	double h = 0.0;
+
+	for (int k=0; k<static_cast<int>(elements.size()); k++)
+	{
+		Element2D* elem = dynamic_cast<Element2D*>(elements[k].get());
+		const std::vector<Point2D>& elem_nodes = elem->nodes;
+
+		for (int i=0; i<3; i++)
+		{
+			const Point2D& a = elem_nodes[i];
+			const Point2D& b = elem_nodes[(i + 1) % 3];
+			double dx = a.x - b.x;
+			double dy = a.y - b.y;
+			double edge = pow(dx*dx + dy*dy, 0.5);
+
+			if (edge > h)
+			{
+				h = edge;
+			}
+		}
+	}
+
+	return h;
 }
 
 // load mesh from Triangle generated files
@@ -360,7 +390,8 @@ void FE_Mesh2D::applyBoundaryConditions(double u_val, double /*unused*/, bool ap
 			}
 
 			// zero out column
-			for (int i=0; i<static_cast<int>(stiffness.row_start.size()); i++)
+			// row_start holds noRows + 1 entries, so stop one short: row_start[i+1] is read below
+			for (int i=0; i<static_cast<int>(stiffness.row_start.size()) - 1; i++)
 			{
 				for (int j=stiffness.row_start[i]; j<stiffness.row_start[i+1]; j++)
 				{

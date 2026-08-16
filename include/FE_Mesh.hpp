@@ -29,6 +29,8 @@ class FE_Mesh
 		// pure virtual method
 		virtual std::vector<double> getNode(int i) = 0;
 		virtual int getNoNodes() = 0;
+		// mesh size h, the largest element diameter, for convergence studies
+		virtual double getMeshSize() = 0;
 		virtual void constructMesh(std::string filename = "") = 0;
 		virtual double evaluateSolution(std::vector<double> x, std::vector<double> solution) = 0;
 		virtual void evaluateDerivative(std::vector<double> x, std::vector<double> solution, double grad[2]) = 0;

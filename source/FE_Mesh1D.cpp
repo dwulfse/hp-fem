@@ -32,6 +32,12 @@ int FE_Mesh1D::getNoNodes()
 	return p*n + 1;
 }
 
+// mesh size h, uniform in 1D
+double FE_Mesh1D::getMeshSize()
+{
+	return 1.0 / n;
+}
+
 // construct mesh of n elements and n+1 nodes
 // filename is unused: the 1D mesh is generated from n and p, not read from file
 void FE_Mesh1D::constructMesh(std::string /*filename*/)
