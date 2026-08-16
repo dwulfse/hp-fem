@@ -8,6 +8,6 @@ Eigen/
 Triangle/
 FEM_python.py
 integration.py
-# # output files
-# hp_errors.csv
-# solution.csv
+# solver output, written to the working directory at run time
+main/hp_error.csv
+main/solution.csv

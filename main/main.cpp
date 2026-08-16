@@ -56,7 +56,7 @@ int main()
 		std::ofstream file("hp_error.csv");
 		file << "p,h,error\n";
 
-		for (int p=1; p<=3; p++)
+		for (int p=1; p<=4; p++)
 		{
 			for (int n=10; n<=20; n++)
 			{
@@ -99,7 +99,7 @@ int main()
 			std::ofstream file("hp_error.csv");
 			file << "p,h,error\n";
 
-			for (int p=1; p<=3; p++)
+			for (int p=1; p<=4; p++)
 			{
 				for (int i=0; i<static_cast<int>(mesh_files.size()); i++)
 				{
