@@ -186,6 +186,20 @@ double FE_Solution::getMeshSize()
 	return mesh->getMeshSize();
 }
 
+// dumps the triangulation and the solution on it, for post-processing
+void FE_Solution::sendFieldToFile(int levels)
+{
+	FE_Mesh2D* mesh2D = dynamic_cast<FE_Mesh2D*>(mesh.get());
+
+	if (mesh2D == nullptr)
+	{
+		std::cerr << "field output is two dimensional only" << std::endl;
+		return;
+	}
+
+	mesh2D->sendFieldToFile(solution, levels);
+}
+
 void FE_Solution::evaluateDerivative(std::vector<double> x, double grad[2])
 {
 	// use mesh specific evaluation method

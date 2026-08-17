@@ -19,6 +19,11 @@ built from integrated Legendre polynomials, so the polynomial degree `p` is a pa
 rather than a rewrite. No finite element library is used; Eigen supplies only the sparse
 Cholesky solve.
 
+<img src="docs/solution.svg" alt="Poisson solution on an L-shaped domain" width="560">
+
+Above, $-\Delta u = 1$ on an L-shaped domain at degree 3. The reentrant corner drives a
+singularity in the gradient, which is the classic motivation for `hp`-refinement.
+
 ![L2 error under h-refinement](docs/convergence.svg)
 
 Both dimensions attain the theoretical $O(h^{p+1})$ rate in the $L^2$ norm.
@@ -53,27 +58,36 @@ The binary is written into `main/` and must be run from there, since it reads me
 by relative path and writes its output to the working directory.
 
 ```sh
-cd main && ./FEM
+cd main
+./FEM                          # 1D, degree 1, 4 elements
+./FEM -d 2 -p 3 -m 6           # 2D on a 128 element mesh at degree 3
+./FEM -d 2 -p 2 -m L.1         # 2D on the L shaped domain
+./FEM -d 2 -p 3 --sweep        # 2D, plus the h-refinement study
+./FEM -d 2 --semilinear --q 2  # semilinear, with a u^5 reaction term
+./FEM --help                   # every option
 ```
 
-This writes `solution.csv` (the solution sampled on a uniform grid, alongside the
-analytic solution) and `hp_error.csv` (the convergence sweep).
+Each run writes `solution.csv`, holding the solution sampled on a uniform grid alongside
+the analytic solution where one is known. `--sweep` additionally writes `hp_error.csv`.
 
-The problem is configured at compile time, at the top of `main/main.cpp`:
+Numbered meshes `1` through `9` are successive refinements of the unit square; `L.1` is an
+L-shaped domain, whose reentrant corner drives a singularity in the solution.
 
-```cpp
-const int polynomialDegree = 1;
-const int dimension        = 1;
-const bool semilinear      = false;
-```
-
-To regenerate the convergence figure from a sweep:
+To regenerate the figures:
 
 ```sh
+# convergence plot, from the sweep output in docs/
 python3 scripts/plot_convergence.py
+
+# solution field, from a run with --field
+cd main && ./FEM -d 2 -p 3 -m L.1 --problem const --field && cd ..
+python3 scripts/plot_solution.py main/field.csv docs/solution.svg \
+    "Poisson on an L-shaped domain" "442 elements at degree 3, 2068 degrees of freedom"
 ```
 
-The script uses only the standard library.
+`--field` writes a triangulation carrying the solution, sampled from the full basis rather
+than from vertex coefficients alone, so the picture reflects the actual degree rather than
+a piecewise linear reduction of it. Both scripts use only the standard library.
 
 ## Tests
 
