@@ -1,6 +1,7 @@
 .vscode/
 build/
 main/FEM
+main/fem_tests
 FEM.out
 errors.csv
 residuals.csv

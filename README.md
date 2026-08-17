@@ -1,5 +1,8 @@
 # hp-fem
 
+[![CI](https://github.com/dwulfse/hp-fem/actions/workflows/ci.yml/badge.svg)](https://github.com/dwulfse/hp-fem/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
+
 A higher-order finite element solver written from scratch in C++, for second order
 elliptic boundary value problems in one and two dimensions.
 
@@ -72,6 +75,23 @@ python3 scripts/plot_convergence.py
 
 The script uses only the standard library.
 
+## Tests
+
+```sh
+ctest --test-dir build --output-on-failure
+```
+
+Catch2 is fetched by CMake at configure time; pass `-DFEM_BUILD_TESTS=OFF` to skip it.
+
+The suite checks three layers. Quadrature rules are verified against exact integrals of
+monomials, which is the defining property of a Gauss rule and pins the nodes and weights
+down completely. The basis is checked structurally: vertex functions interpolate, edge
+functions vanish on the edges they do not belong to, bubbles vanish on all three, each
+edge mode reduces to the corresponding 1D Lobatto function along its own edge, and the
+analytic gradients agree with finite differences. Finally the solver is run end to end
+against problems with known solutions, asserting that the measured convergence rate
+matches $p+1$.
+
 ## Method
 
 **Reference elements.** The interval $[-1, 1]$ in 1D, and the triangle
@@ -107,6 +127,7 @@ Convergence is measured in the energy norm. This path is two-dimensional only.
 include/    class declarations
 source/     implementations
 main/       driver, meshes, and output
+tests/      Catch2 test suite
 scripts/    convergence plotting
 docs/       figure and the data behind it
 ```
