@@ -14,8 +14,10 @@ This repo is being reworked into a portfolio piece for a GitHub profile linked o
 
 ```
 cmake -B build -S . && cmake --build build
-cd main && ./FEM
+cd main && ./FEM --help
 ```
+
+`source/` builds into a `fem_core` static library that both `FEM` and `fem_tests` link against; only `main/main.cpp` is outside it.
 
 Requires system Eigen (`pacman -S eigen`; 5.0.1 is what this builds against). C++17.
 
@@ -27,7 +29,13 @@ The build is warning-clean under `-Wall -Wextra`. Keep it that way. The stricter
 
 ## Testing
 
-None. No test framework, no test files, no CI. Correctness is checked by hand: `main/main.cpp` prints a solution against a hardcoded expected vector in a comment, and L2-error convergence sweeps are written to `main/hp_error.csv` (untracked — it and `solution.csv` are run-time output). No linter or formatter is configured.
+Catch2, fetched by CMake at configure time. `ctest --test-dir build --output-on-failure`, or run `main/fem_tests` directly for Catch2's own output and filtering. `-DFEM_BUILD_TESTS=OFF` skips the fetch. The binary lands in `main/` because the 2D cases read meshes by relative path.
+
+`tests/` covers three layers: quadrature against exact integrals of monomials, the basis structurally (interpolation, vanishing, Lobatto reduction along an edge, gradients against finite differences), and the solver end to end asserting measured convergence rates.
+
+**Every one of these was written because it catches a defect this repo actually shipped.** Before changing numerics, check whether an existing test already pins the property — and if you fix something, add the test that would have caught it. Reintroducing the quadrature typo fails four cases; reintroducing the edge kernel index fails three.
+
+CI (`.github/workflows/ci.yml`) builds with gcc and clang in Debug and Release, runs ctest, runs the solver, and separately builds with `-Werror`. No linter or formatter is configured.
 
 Benchmarks with known analytic solutions (dissertation §7) — use these to verify changes:
 
@@ -79,7 +87,7 @@ Sharp edges:
 
 ## Configuration and inputs
 
-Problem setup is compile-time only: `polynomialDegree`, `dimension`, and `semilinear` are literals at the top of `main/main.cpp`. There are no CLI arguments and no environment variables anywhere in the codebase.
+Problem setup is entirely command line: `./FEM --help`. Dimension, degree, element count, mesh, problem, the semilinear parameters, `--sweep` and `--field` are all flags, parsed in `main/main.cpp`. There are no environment variables and no config files. `main.cpp` is a driver only — it holds the benchmark forcing functions, argument parsing and validation, and nothing numerical.
 
 2D meshes come from the external Triangle generator, which is not in the repo. They are selected by bare number — `"6"` loads `main/domain.6.node` and `.ele` — where the number is a refinement level (`h = 1/2^(k+1)`). Triangle files are 1-indexed and decremented on read; only 3-node triangles are supported. The Triangle invocation that produced them was not recorded. `domain.L.*` is the L-shaped domain from dissertation §7.2 — results for it exist, so it was run by editing `main.cpp`, even though no current code path names it.
 
@@ -97,8 +105,15 @@ Commit messages are lowercase, free-form, descriptive sentences — no conventio
 
 ## Portfolio cleanup candidates
 
-Mostly done: the repo is `dwulfse/hp-fem`, with a README, the convergence figure in `docs/`, a CMake build, and `FEM.out` / `.vscode/` / the generated CSVs all untracked.
+Mostly done: the repo is `dwulfse/hp-fem`, with a README, both figures in `docs/`, a CMake build, tests, CI, an MIT licence, and `FEM.out` / `.vscode/` / the generated CSVs all untracked.
 
-The one item left is that `FEM.out`, a 4.6 MB Windows binary, is still in git history and so still in the clone size. Removing it needs a history rewrite and a force push, which was considered and deliberately deferred.
+Remaining, in rough order of value:
+
+- `FE_Solution::getL2Error` is O(n²): it calls `evaluateSolution`, which linearly scans every element, once per quadrature point of every element. The element is known at the call site, so passing it in makes this linear.
+- `FE_Mesh2D::evaluateSolution` returns `0.0` when no element claims the point, silently. The bounding-box reject before the affine test uses no tolerance, so a point exactly on an element boundary is at the mercy of rounding. Not observed to bite — a test over every vertex at `p = 1, 2, 3` passes — but it is luck rather than design.
+- The semilinear path has an unresolved `// TODO` at `source/FE_Solution.cpp:124` for applying BCs inside the Picard loop, and no test beyond "it converges to something finite". No manufactured solution exists to check it against.
+- `source/Element.cpp` is an empty file.
+- Style is still inconsistent (see above); a `.clang-format` would settle it.
+- `FEM.out`, a 4.6 MB Windows binary, is still in git history and so still in the clone size. Removing it needs a history rewrite and a force push, which was considered and deliberately deferred.
 
 Extensions the dissertation itself proposes (§8), in its own order of preference: Neumann and mixed boundary conditions; hp-adaptivity driven by a posteriori error estimates; fully nonlinear problems.
