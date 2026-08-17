@@ -33,6 +33,7 @@ class FE_Mesh2D : public FE_Mesh
 		std::vector<double> assembleNonlinearLoad(const std::vector<double>& U, int q);
 		std::vector<double> assembleStiffnessProduct(const std::vector<double>& U);
 		void sendSolutionToFile(int n, const std::vector<double>& solution);
+		void sendFieldToFile(const std::vector<double>& solution, int levels);
 };
 
 #endif

@@ -19,6 +19,7 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 #include "FE_Solution.hpp"
+#include "FE_Mesh2D.hpp"
 
 #include <cmath>
 #include <string>
@@ -212,6 +213,34 @@ TEST_CASE("2D mesh sizes shrink by root two between successive refinements", "[m
 	{
 		INFO("meshes " << meshes[i] << " -> " << meshes[i + 1]);
 		REQUIRE_THAT(h[i] / h[i + 1], WithinRel(sqrt(2.0), 1e-6));
+	}
+}
+
+TEST_CASE("solution coefficients on vertex dofs are the values at those vertices", "[solver][2d]")
+{
+	// the vertex basis functions interpolate and every edge and bubble mode
+	// vanishes at the vertices, so the coefficient on a vertex degree of freedom
+	// has to equal u_h there. field output relies on this to place values, and
+	// it is the property that makes the vertex dofs meaningful on their own
+	for (int p = 1; p <= 3; p++)
+	{
+		FE_Solution FEM(1, p, 2);
+		std::vector<double> u = FEM.solve(forcingTrig2D, "5");
+
+		// getNoNodes counts every degree of freedom, and past the vertex block
+		// those are edge and bubble modes with no single point attached to
+		// them, so the loop has to stop at the vertex count instead
+		FE_Mesh2D* mesh = dynamic_cast<FE_Mesh2D*>(FEM.mesh.get());
+		REQUIRE(mesh != nullptr);
+
+		for (int i = 0; i < static_cast<int>(mesh->nodes.size()); i++)
+		{
+			std::vector<double> node = FEM.mesh->getNode(i);
+
+			INFO("p = " << p << ", vertex " << i
+				<< " at (" << node[0] << ", " << node[1] << ")");
+			REQUIRE_THAT(FEM.evaluateSolution(node), WithinAbs(u[i], 1e-9));
+		}
 	}
 }
 

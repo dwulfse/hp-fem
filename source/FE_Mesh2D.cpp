@@ -273,6 +273,10 @@ double FE_Mesh2D::evaluateSolution(std::vector<double> x, std::vector<double> so
 		double xi1 = 2.0 * (A_inv[0][0] * (x[0] - P.x) + A_inv[0][1] * (x[1] - P.y)) - 1.0;
 		double xi2 = 2.0 * (A_inv[1][0] * (x[0] - P.x) + A_inv[1][1] * (x[1] - P.y)) - 1.0;
 
+		// a cheap reject before the affine coordinate test below. the tolerance
+		// matters: a point sitting exactly on an element boundary can map fractionally
+		// outside the reference square, and without slack no element claims it and the
+		// search falls through to returning zero
 		if (xi1 < -1.0 || xi1 > 1.0 || xi2 < -1.0 || xi2 > 1.0)
 		{
 			continue;
@@ -319,6 +323,10 @@ void FE_Mesh2D::evaluateDerivative(std::vector<double> x, std::vector<double> so
 		double xi1 = 2.0 * (A_inv[0][0] * (x[0] - P.x) + A_inv[0][1] * (x[1] - P.y)) - 1.0;
 		double xi2 = 2.0 * (A_inv[1][0] * (x[0] - P.x) + A_inv[1][1] * (x[1] - P.y)) - 1.0;
 
+		// a cheap reject before the affine coordinate test below. the tolerance
+		// matters: a point sitting exactly on an element boundary can map fractionally
+		// outside the reference square, and without slack no element claims it and the
+		// search falls through to returning zero
 		if (xi1 < -1.0 || xi1 > 1.0 || xi2 < -1.0 || xi2 > 1.0)
 		{
 			continue;
@@ -345,6 +353,92 @@ void FE_Mesh2D::evaluateDerivative(std::vector<double> x, std::vector<double> so
 }
 
 // send solution to file
+// writes a triangulation carrying the solution, in one file, so a post-processing
+// script needs nothing else to draw the field.
+//
+// each element is subdivided into 4^levels pieces and u_h is evaluated at every
+// sub-vertex from the full basis. sampling rather than reusing the vertex
+// coefficients matters above p = 1: the vertex functions interpolate, so those
+// coefficients are the value of u_h at the corners, but they carry none of the
+// edge or bubble content, and a plot built from them alone would show a
+// piecewise linear picture of a higher order solution.
+void FE_Mesh2D::sendFieldToFile(const std::vector<double>& solution, int levels)
+{
+	std::ofstream file("field.csv");
+	file << "# vertices: v,x,y,u\n";
+	file << "# triangles: t,i,j,k  (indices into the vertex list)\n";
+
+	// divisions along each edge of the reference triangle
+	int N = 1;
+	for (int i=0; i<levels; i++)
+	{
+		N *= 2;
+	}
+
+	int written = 0;
+
+	for (int e=0; e<static_cast<int>(elements.size()); e++)
+	{
+		Element2D* elem = dynamic_cast<Element2D*>(elements[e].get());
+		const std::vector<Point2D>& elem_nodes = elem->nodes;
+		int nDoF = static_cast<int>(elem->local_DoF.size());
+
+		// reference triangle corners, matching the local vertex ordering
+		const double V[3][2] = {{-1.0, -1.0}, {1.0, -1.0}, {-1.0, 1.0}};
+
+		// lattice of points, indexed so that (i, j) sits at barycentric
+		// coordinates (i/N, j/N, 1 - i/N - j/N)
+		std::vector<int> index((N + 1) * (N + 1), -1);
+
+		for (int i=0; i<=N; i++)
+		{
+			for (int j=0; j+i<=N; j++)
+			{
+				double a = static_cast<double>(i) / N;
+				double b = static_cast<double>(j) / N;
+				double c = 1.0 - a - b;
+
+				double xi = a * V[0][0] + b * V[1][0] + c * V[2][0];
+				double eta = a * V[0][1] + b * V[1][1] + c * V[2][1];
+
+				double u = 0.0;
+				for (int k=0; k<nDoF; k++)
+				{
+					u += solution.at(elem->local_DoF[k])
+						* elem->basisSign(k) * elem->poly.basis_2D(k, xi, eta);
+				}
+
+				Point2D point = mapToPhysical(elem_nodes[0], elem_nodes[1], elem_nodes[2],
+					Point2D{0, xi, eta});
+
+				file << "v," << point.x << "," << point.y << "," << u << "\n";
+				index[i * (N + 1) + j] = written++;
+			}
+		}
+
+		// two triangles per lattice cell, the second only where it fits
+		for (int i=0; i<N; i++)
+		{
+			for (int j=0; j+i<N; j++)
+			{
+				int v00 = index[i * (N + 1) + j];
+				int v10 = index[(i + 1) * (N + 1) + j];
+				int v01 = index[i * (N + 1) + (j + 1)];
+
+				file << "t," << v00 << "," << v10 << "," << v01 << "\n";
+
+				if (i + j + 2 <= N)
+				{
+					int v11 = index[(i + 1) * (N + 1) + (j + 1)];
+					file << "t," << v10 << "," << v11 << "," << v01 << "\n";
+				}
+			}
+		}
+	}
+
+	file.close();
+}
+
 void FE_Mesh2D::sendSolutionToFile(int noGridPoints, const std::vector<double>& solution)
 {
 	std::ofstream file("solution.csv");

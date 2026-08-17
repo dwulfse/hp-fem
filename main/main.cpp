@@ -66,6 +66,8 @@ struct Config
 	std::string mesh = "6";		// 2D only; loads domain.<mesh>.node and .ele
 	std::string problem = "trig";
 	int gridPoints = 64;
+	bool field = false;
+	int fieldLevels = 2;
 
 	bool sweep = false;
 	int sweepMaxDegree = 4;
@@ -95,6 +97,9 @@ void printUsage()
 		"                         L shaped domain\n"
 		"      --problem <name>   trig or const (default trig)\n"
 		"      --grid <int>       points per side written to solution.csv (default 64)\n"
+		"      --field            also write field.csv, the triangulation and the\n"
+		"                         solution on it, for plotting (2D only)\n"
+		"      --field-levels <n> subdivisions per element in field.csv (default 2)\n"
 		"\n"
 		"      --sweep            also run an h-refinement study to hp_error.csv\n"
 		"      --max-degree <int> highest degree in the sweep (default 4)\n"
@@ -171,6 +176,14 @@ bool parseArgs(int argc, char** argv, Config& cfg)
 		{
 			cfg.gridPoints = atoi(value(argc, argv, i, a));
 		}
+		else if (matches(a, nullptr, "--field"))
+		{
+			cfg.field = true;
+		}
+		else if (matches(a, nullptr, "--field-levels"))
+		{
+			cfg.fieldLevels = atoi(value(argc, argv, i, a));
+		}
 		else if (matches(a, nullptr, "--sweep"))
 		{
 			cfg.sweep = true;
@@ -237,6 +250,11 @@ bool validate(const Config& cfg)
 		std::cerr << "error: problem must be trig or const\n";
 		return false;
 	}
+	if (cfg.field && cfg.dimension != 2)
+	{
+		std::cerr << "error: field output is two dimensional only\n";
+		return false;
+	}
 	if (cfg.semilinear && cfg.dimension != 2)
 	{
 		std::cerr << "error: the semilinear solver is two dimensional only\n";
@@ -300,6 +318,12 @@ void runLinear(const Config& cfg)
 		FEM.sendSolutionToFile(cfg.gridPoints);
 	}
 
+	if (cfg.field && cfg.dimension == 2)
+	{
+		FEM.sendFieldToFile(cfg.fieldLevels);
+		std::cout << "wrote field.csv\n";
+	}
+
 	std::cout << "wrote solution.csv\n";
 }
 
@@ -318,6 +342,13 @@ void runSemilinear(const Config& cfg)
 		<< "dofs       " << solution.size() << "\n";
 
 	FEM.sendSolutionToFile(cfg.gridPoints);
+
+	if (cfg.field)
+	{
+		FEM.sendFieldToFile(cfg.fieldLevels);
+		std::cout << "wrote field.csv\n";
+	}
+
 	std::cout << "wrote solution.csv\n";
 }
 

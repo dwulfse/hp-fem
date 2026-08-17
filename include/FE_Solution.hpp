@@ -42,6 +42,7 @@ class FE_Solution
 		double getL2Error(double (*f_analytic)(const std::vector<double>&));
 		void sendSolutionToFile(int n, double (*f_analytic)(const std::vector<double>&));
 		void sendSolutionToFile(int noGridPoints);
+		void sendFieldToFile(int levels);
 };
 
 #endif
