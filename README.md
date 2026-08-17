@@ -53,19 +53,20 @@ The binary is written into `main/` and must be run from there, since it reads me
 by relative path and writes its output to the working directory.
 
 ```sh
-cd main && ./FEM
+cd main
+./FEM                          # 1D, degree 1, 4 elements
+./FEM -d 2 -p 3 -m 6           # 2D on a 128 element mesh at degree 3
+./FEM -d 2 -p 2 -m L.1         # 2D on the L shaped domain
+./FEM -d 2 -p 3 --sweep        # 2D, plus the h-refinement study
+./FEM -d 2 --semilinear --q 2  # semilinear, with a u^5 reaction term
+./FEM --help                   # every option
 ```
 
-This writes `solution.csv` (the solution sampled on a uniform grid, alongside the
-analytic solution) and `hp_error.csv` (the convergence sweep).
+Each run writes `solution.csv`, holding the solution sampled on a uniform grid alongside
+the analytic solution where one is known. `--sweep` additionally writes `hp_error.csv`.
 
-The problem is configured at compile time, at the top of `main/main.cpp`:
-
-```cpp
-const int polynomialDegree = 1;
-const int dimension        = 1;
-const bool semilinear      = false;
-```
+Numbered meshes `1` through `9` are successive refinements of the unit square; `L.1` is an
+L-shaped domain, whose reentrant corner drives a singularity in the solution.
 
 To regenerate the convergence figure from a sweep:
 
